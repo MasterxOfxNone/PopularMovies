@@ -1,0 +1,60 @@
+<resources>
+
+    <string name="app_name">Popular Movies</string>
+    <string name="title_activity_detail">Movie Details</string>
+
+    <!-- Menu label strings -->
+    <string name="action_settings">Settings</string>
+    <string name="action_search_mode">Sort Movies By..</string>
+    <string name="action_search_mode_popular">Most Popular</string>
+    <string name="action_search_mode_top_rated">Top Rated</string>
+
+    <!-- Label strings for DetailActivity layout -->
+    <string name="label_movie_release_date">Release Date:</string>
+    <string name="label_movie_user_rating">User Rating:</string>
+    <string name="label_movie_plot_summary">Plot Summary:</string>
+
+    <!-- Mock strings for DetailActivity layout -->
+    <string name="mock_text_movie_title">Suicide Squad</string>
+    <string name="mock_text_movie_release_date">2016/08/03</string>
+    <string name="mock_text_movie_user_rating">5.9</string>
+    <string name="mock_text_movie_plot_summary">From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government, undertaking high-risk black ops missions in exchange for commuted prison sentences.</string>
+
+    <!-- SharedPreference settings: TMDB Search Mode -->
+    <string name="prefs_search_mode_key">SEARCH_MODE</string>
+    <string name="prefs_search_mode_value_popular">popular</string>
+    <string name="prefs_search_mode_value_top_rated">top_rated</string>
+    <string name="prefs_search_mode_default_value">@string/prefs_search_mode_value_popular</string>
+
+    <!-- Key value strings for Intent.putExtra -->
+    <string name="intent_key_movie_title">TITLE</string>
+    <string name="intent_key_movie_release_date">RELEASE_DATE</string>
+    <string name="intent_key_movie_user_rating">USER_RATING</string>
+    <string name="intent_key_movie_plot_summary">PLOT_SUMMARY</string>
+    <string name="intent_key_movie_poster_url">POSTER_URL</string>
+
+    <!-- TheMovieDB API helper strings -->
+    <string name="tmdb_image_base_url">http://image.tmdb.org/t/p/w185</string>
+    <string name="tmdb_base_url">http://api.themoviedb.org/3/movie/</string>
+    <string name="tmdb_api_key">api_key</string>
+
+    <!-- TheMovieDB JSON helper strings -->
+    <string name="tmdb_json_results">results</string>
+    <string name="tmdb_json_poster_path">poster_path</string>
+    <string name="tmdb_json_overview">overview</string>
+    <string name="tmdb_json_release_date">release_date</string>
+    <string name="tmdb_json_title">original_title</string>
+    <string name="tmdb_json_rating">vote_average</string>
+
+    <!-- Error message helper strings -->
+    <string name="error_pretext">Error </string>
+    <string name="error_ioexception">Error closing stream.</string>
+
+    <!-- Toast message helper strings -->
+    <string name="toast_no_api_key_message">You need to edit the constant variable API_KEY with your API Key from TheMovieDB.org.</string>
+    <string name="toast_no_internet_connectivity">This app requires Internet access; your phone is not online.</string>
+
+    <!-- Misc helper strings -->
+    <string name="api_key_changeme">CHANGE_ME_TO_API_KEY</string>
+
+</resources>

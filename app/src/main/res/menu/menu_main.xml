@@ -1,0 +1,32 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.gmail.stonedevs.popularmovies.MainActivity">
+
+    <item
+        android:id="@+id/action_search_mode"
+        android:orderInCategory="100"
+        android:title="@string/action_search_mode"
+        app:showAsAction="never">
+
+        <!-- StackOverflow source: http://stackoverflow.com/questions/6530980/create-sub-menu-in-android -->
+        <menu>
+
+            <group
+                android:id="@+id/action_search_mode_group"
+                android:checkableBehavior="single">
+
+                <item
+                    android:id="@+id/action_search_mode_popular"
+                    android:title="@string/action_search_mode_popular" />
+
+                <item
+                    android:id="@+id/action_search_mode_top_rated"
+                    android:title="@string/action_search_mode_top_rated" />
+
+            </group>
+
+        </menu>
+    </item>
+
+</menu>
