@@ -192,14 +192,14 @@ public class MainActivityFragment extends Fragment {
          * Background thread method that downloads data from TheMovieDB.org
          *
          * @param params String values: Movie Search Mode, API_KEY
-         * @return SparseArray of Movie objects
+         * @return String that holds a raw JSON list string
          */
         @Override
         protected String doInBackground(String... params) {
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
 
-            String movieJsonStr = null;
+            String jsonStr = null;
 
             String mode = params[0];    //  Movie Search Mode
             String apiKey = params[1];  //  API Key
@@ -238,7 +238,7 @@ public class MainActivityFragment extends Fragment {
                     // Stream was empty.  No point in parsing.
                     return null;
                 }
-                movieJsonStr = buffer.toString();
+                jsonStr = buffer.toString();
             } catch (IOException e) {
                 Log.e(LOG_TAG, getString(R.string.error_pretext), e);
                 // If the code didn't successfully get the data, there's no point in parsing.
@@ -256,14 +256,23 @@ public class MainActivityFragment extends Fragment {
                 }
             }
 
-            return movieJsonStr;
+            return jsonStr;
         }
 
+        /**
+         * Executes after FetchMovieTask finishes.
+         * <p>
+         * Calls method to parse resulting Raw JSON string into a List of Movie objects.
+         * Fills MoviePosterAdapter with said List of newly-parsed Movie objects.
+         *
+         * @param jsonStr Raw JSON string
+         */
         @Override
-        protected void onPostExecute(String movieJsonStr) {
+        protected void onPostExecute(String jsonStr) {
             try {
-                // Add List of Movie objects to MoviePosterAdapter (Overridden to clear adapter first)
-                mMoviePosterAdapter.addAll(parseJsonStringIntoMovieObjects(movieJsonStr));
+                List<Movie> parsedMovieList = parseJsonStringIntoMovieObjects(jsonStr);
+
+                fillMoviePosterAdapterWithParsedData(parsedMovieList);
             } catch (JSONException | ParseException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
@@ -274,8 +283,8 @@ public class MainActivityFragment extends Fragment {
     /**
      * Method that parses a JSON string, then returns its result as an ArrayList of Movie objects
      *
-     * @param jsonStr JSON string downloaded/returned from FetchMovieTask
-     * @return SparseArray of Movie objects
+     * @param jsonStr Raw JSON string downloaded/returned from FetchMovieTask
+     * @return List of Movie objects
      * @throws JSONException  JSON parsing exception
      * @throws ParseException SimpleDateFormat parsing exception
      */
@@ -309,5 +318,15 @@ public class MainActivityFragment extends Fragment {
         }
 
         return movieList;
+    }
+
+    /**
+     * Fills MoviePosterAdapter with a List of newly-parsed Movie objects
+     *
+     * @param movieList List of Movie objects
+     */
+    private void fillMoviePosterAdapterWithParsedData(List<Movie> movieList) {
+        mMoviePosterAdapter.clear();
+        mMoviePosterAdapter.addAll(movieList);
     }
 }

@@ -10,7 +10,6 @@ import android.widget.ImageView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
 public class MoviePosterAdapter extends ArrayAdapter<Movie> {
     public MoviePosterAdapter(Context context, ArrayList<Movie> movies) {
@@ -29,17 +28,5 @@ public class MoviePosterAdapter extends ArrayAdapter<Movie> {
         Picasso.with(getContext()).load(getContext().getString(R.string.tmdb_image_base_url) + movie.posterUrl).into(posterImage);
 
         return convertView;
-    }
-
-    /**
-     * Overridden to clear adapter before adding collection
-     *
-     * @param collection List of Movie objects to add to adapter
-     */
-    @Override
-    public void addAll(Collection<? extends Movie> collection) {
-        this.clear();
-
-        super.addAll(collection);
     }
 }
