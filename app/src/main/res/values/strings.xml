@@ -7,7 +7,7 @@
     <string name="action_settings">Settings</string>
     <string name="action_search_mode">Sort Movies By..</string>
     <string name="action_search_mode_popular">Most Popular</string>
-    <string name="action_search_mode_top_rated">HighestRated</string>
+    <string name="action_search_mode_top_rated">Highest Rated</string>
 
     <!-- Label strings for DetailActivity layout -->
     <string name="label_movie_release_date">Release Date:</string>

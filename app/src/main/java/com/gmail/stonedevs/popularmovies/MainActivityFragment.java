@@ -35,12 +35,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivityFragment extends Fragment {
 
     // Visit https://www.themoviedb.org to create an account and apply for a unique API key.
-    private static final String API_KEY = "CHANGE_ME_TO_API_KEY"; // API Key String Value
+    private static final String API_KEY = "CHANGE_THIS_TO_API_KEY"; // API Key String Value
 
     // Adapter for the GridView to use in order to display images
     MoviePosterAdapter mMoviePosterAdapter;
@@ -179,7 +180,7 @@ public class MainActivityFragment extends Fragment {
     }
 
     /**
-     * Custom AsyncTask class that downloads a JSON list of movie information from TheMovieDB
+     * Custom AsyncTask class that downloads/returns a JSON list of movie information from TheMovieDB
      */
     private class FetchMovieTask extends AsyncTask<String, Void, String> {
         final String LOG_TAG = FetchMovieTask.class.getSimpleName();
@@ -261,41 +262,52 @@ public class MainActivityFragment extends Fragment {
         @Override
         protected void onPostExecute(String movieJsonStr) {
             try {
-                getListOfMoviesFromJson(movieJsonStr);
+                // Add List of Movie objects to MoviePosterAdapter (Overridden to clear adapter first)
+                mMoviePosterAdapter.addAll(parseJsonStringIntoMovieObjects(movieJsonStr));
             } catch (JSONException | ParseException e) {
                 Log.e(LOG_TAG, e.getMessage(), e);
                 e.printStackTrace();
             }
         }
+    }
 
-        private void getListOfMoviesFromJson(String movieJsonStr)
-                throws JSONException, ParseException {
+    /**
+     * Method that parses a JSON string, then returns its result as an ArrayList of Movie objects
+     *
+     * @param jsonStr JSON string downloaded/returned from FetchMovieTask
+     * @return SparseArray of Movie objects
+     * @throws JSONException  JSON parsing exception
+     * @throws ParseException SimpleDateFormat parsing exception
+     */
+    private List<Movie> parseJsonStringIntoMovieObjects(String jsonStr)
+            throws JSONException, ParseException {
 
-            final String TMDB_RESULTS = getString(R.string.tmdb_json_results);
-            final String TMDB_POSTER_PATH = getString(R.string.tmdb_json_poster_path);
-            final String TMDB_OVERVIEW = getString(R.string.tmdb_json_overview);
-            final String TMDB_RELEASE_DATE = getString(R.string.tmdb_json_release_date);
-            final String TMDB_TITLE = getString(R.string.tmdb_json_title);
-            final String TMDB_RATING = getString(R.string.tmdb_json_rating);
+        final String TMDB_RESULTS = getString(R.string.tmdb_json_results);
+        final String TMDB_POSTER_PATH = getString(R.string.tmdb_json_poster_path);
+        final String TMDB_OVERVIEW = getString(R.string.tmdb_json_overview);
+        final String TMDB_RELEASE_DATE = getString(R.string.tmdb_json_release_date);
+        final String TMDB_TITLE = getString(R.string.tmdb_json_title);
+        final String TMDB_RATING = getString(R.string.tmdb_json_rating);
 
-            JSONObject moviePageJSON = new JSONObject(movieJsonStr);
-            JSONArray resultsJSONArray = moviePageJSON.getJSONArray(TMDB_RESULTS);
+        JSONObject jsonObjectAsPage = new JSONObject(jsonStr);
+        JSONArray jsonArrayWithResults = jsonObjectAsPage.getJSONArray(TMDB_RESULTS);
 
-            mMoviePosterAdapter.clear();
-            for (int i = 0; i < resultsJSONArray.length(); i++) {
-                JSONObject movieJSON = resultsJSONArray.getJSONObject(i);
+        List<Movie> movieList = new ArrayList<>();
+        for (int i = 0; i < jsonArrayWithResults.length(); i++) {
+            JSONObject jsonObjectAsElement = jsonArrayWithResults.getJSONObject(i);
 
-                String title = movieJSON.getString(TMDB_TITLE);
-                Double rating = movieJSON.getDouble(TMDB_RATING);
-                String overview = movieJSON.getString(TMDB_OVERVIEW);
-                String posterPath = movieJSON.getString(TMDB_POSTER_PATH);
+            String title = jsonObjectAsElement.getString(TMDB_TITLE);
+            Double rating = jsonObjectAsElement.getDouble(TMDB_RATING);
+            String overview = jsonObjectAsElement.getString(TMDB_OVERVIEW);
+            String posterPath = jsonObjectAsElement.getString(TMDB_POSTER_PATH);
 
-                // http://stackoverflow.com/questions/11046053/how-to-format-date-string-in-java
-                Date date = new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(movieJSON.getString(TMDB_RELEASE_DATE));
-                String releaseDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(date);
+            // http://stackoverflow.com/questions/11046053/how-to-format-date-string-in-java
+            Date date = new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(jsonObjectAsElement.getString(TMDB_RELEASE_DATE));
+            String releaseDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(date);
 
-                mMoviePosterAdapter.add(new Movie(title, releaseDate, overview, rating, posterPath));
-            }
+            movieList.add(new Movie(title, releaseDate, overview, rating, posterPath));
         }
+
+        return movieList;
     }
 }
