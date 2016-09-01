@@ -1,37 +1,36 @@
 package com.gmail.stonedevs.popularmovies;
 
+import org.parceler.Parcel;
+
+@Parcel
 public class Movie {
-    private String mTitle;
-    private String mReleaseDate;
-    private String mOverview;
-    private Double mUserRating;
-    private String mPosterUrl;
+    String title;
+    String releaseDate;
+    String overview;
+    Double userRating;
+    String posterUrl;
 
+    /**
+     * Empty constructor as required per the Parceler library
+     * https://guides.codepath.com/android/Using-Parceler
+     */
+    public Movie() {
+    }
+
+    /**
+     * Full constructor that takes all variable params to build object
+     *
+     * @param title       Movie title
+     * @param releaseDate Release date of Movie
+     * @param overview    Plot summary of Movie
+     * @param userRating  Ratings of Movie per TheMovieDB.org
+     * @param posterUrl   URL of poster image for Movie
+     */
     public Movie(String title, String releaseDate, String overview, Double userRating, String posterUrl) {
-        this.mTitle = title;
-        this.mReleaseDate = releaseDate;
-        this.mOverview = overview;
-        this.mUserRating = userRating;
-        this.mPosterUrl = posterUrl;
-    }
-
-    public String getTitle() {
-        return mTitle;
-    }
-
-    public String getReleaseDate() {
-        return mReleaseDate;
-    }
-
-    public String getOverview() {
-        return mOverview;
-    }
-
-    public Double getUserRating() {
-        return mUserRating;
-    }
-
-    public String getPosterUrl() {
-        return mPosterUrl;
+        this.title = title;
+        this.releaseDate = releaseDate;
+        this.overview = overview;
+        this.userRating = userRating;
+        this.posterUrl = posterUrl;
     }
 }

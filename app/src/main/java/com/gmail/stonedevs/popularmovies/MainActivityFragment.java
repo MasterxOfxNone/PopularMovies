@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
-import android.util.SparseArray;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -16,22 +18,32 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.squareup.picasso.Picasso;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.parceler.Parcels;
 
-public class MainActivityFragment extends Fragment
-        implements FetchMovieTask.AsyncResponse {
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
+public class MainActivityFragment extends Fragment {
 
     // Visit https://www.themoviedb.org to create an account and apply for a unique API key.
     private static final String API_KEY = "CHANGE_ME_TO_API_KEY"; // API Key String Value
 
     // Adapter for the GridView to use in order to display images
-    ImageAdapter mMoviePosterAdapter;
-
-    // SparseArray that contains a list of Movie objects
-    SparseArray<Movie> mMovieList;
+    MoviePosterAdapter mMoviePosterAdapter;
 
     public MainActivityFragment() {
         setHasOptionsMenu(true);
@@ -42,23 +54,17 @@ public class MainActivityFragment extends Fragment
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
 
-        mMoviePosterAdapter = new ImageAdapter();
+        mMoviePosterAdapter = new MoviePosterAdapter(getActivity(), new ArrayList<Movie>());
 
         GridView movieGridView = (GridView) view.findViewById(R.id.gridView_movie_posters);
         movieGridView.setAdapter(mMoviePosterAdapter);
         movieGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                Movie movie = mMovieList.valueAt(position);
-
-                // If Movie object isn't null, put data into Intent object; start the activity
-                assert movie != null;
+                Movie movie = mMoviePosterAdapter.getItem(position);
                 Intent intent = new Intent(getActivity(), DetailActivity.class)
-                        .putExtra(getString(R.string.intent_key_movie_poster_url), movie.getPosterUrl())
-                        .putExtra(getString(R.string.intent_key_movie_title), movie.getTitle())
-                        .putExtra(getString(R.string.intent_key_movie_release_date), movie.getReleaseDate())
-                        .putExtra(getString(R.string.intent_key_movie_user_rating), movie.getUserRating())
-                        .putExtra(getString(R.string.intent_key_movie_plot_summary), movie.getOverview());
+                        .putExtra(getString(R.string.intent_key_movie_parcel), Parcels.wrap(movie));
+
                 startActivity(intent);
             }
         });
@@ -90,9 +96,7 @@ public class MainActivityFragment extends Fragment
             case R.id.action_search_mode_popular:
                 if (!getPrefsMovieSearchMode().equals(getString(R.string.prefs_search_mode_value_popular))) {
                     item.setChecked(true);
-
                     setPrefsMovieSearchMode(getString(R.string.prefs_search_mode_value_popular));
-
                     fetchMovieData();
                     return false;
                 }
@@ -100,9 +104,7 @@ public class MainActivityFragment extends Fragment
             case R.id.action_search_mode_top_rated:
                 if (!getPrefsMovieSearchMode().equals(getString(R.string.prefs_search_mode_value_top_rated))) {
                     item.setChecked(true);
-
                     setPrefsMovieSearchMode(getString(R.string.prefs_search_mode_value_top_rated));
-
                     fetchMovieData();
                     return false;
                 }
@@ -112,28 +114,6 @@ public class MainActivityFragment extends Fragment
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * Method that receives results from FetchMovieTask PostExecute() and parses the results into
-     * a list of Movie objects to use later and add all found images to the ImageAdapter
-     *
-     * @param movies SparseArray of Movie objects in direct result of FetchMovieTask
-     */
-    @Override
-    public void processFinish(SparseArray<Movie> movies) {
-        mMovieList = movies.clone();
-
-        mMoviePosterAdapter.clear();
-        for (int i = 0; i < movies.size(); i++) {
-            Movie movie = movies.valueAt(i);
-
-            ImageView imageView = new ImageView(getActivity());
-            imageView.setAdjustViewBounds(true);
-
-            Picasso.with(getContext()).load(getString(R.string.tmdb_image_base_url) + movie.getPosterUrl()).into(imageView);
-
-            mMoviePosterAdapter.add(imageView);
-        }
-    }
 
     /**
      * Gets settings info for Movie Search Mode
@@ -166,7 +146,7 @@ public class MainActivityFragment extends Fragment
     private void fetchMovieData() {
         if (isOnline()) {
             if (hasApiKey()) {
-                new FetchMovieTask(this, getActivity()).execute(getPrefsMovieSearchMode(), API_KEY);
+                new FetchMovieTask().execute(getPrefsMovieSearchMode(), API_KEY);
             } else {
                 Toast.makeText(getActivity(), getString(R.string.toast_no_api_key_message), Toast.LENGTH_LONG).show();
             }
@@ -196,5 +176,126 @@ public class MainActivityFragment extends Fragment
      */
     private boolean hasApiKey() {
         return !API_KEY.equals(getString(R.string.api_key_changeme));
+    }
+
+    /**
+     * Custom AsyncTask class that downloads a JSON list of movie information from TheMovieDB
+     */
+    private class FetchMovieTask extends AsyncTask<String, Void, String> {
+        final String LOG_TAG = FetchMovieTask.class.getSimpleName();
+
+        public FetchMovieTask() {
+        }
+
+        /**
+         * Background thread method that downloads data from TheMovieDB.org
+         *
+         * @param params String values: Movie Search Mode, API_KEY
+         * @return SparseArray of Movie objects
+         */
+        @Override
+        protected String doInBackground(String... params) {
+            HttpURLConnection urlConnection = null;
+            BufferedReader reader = null;
+
+            String movieJsonStr = null;
+
+            String mode = params[0];    //  Movie Search Mode
+            String apiKey = params[1];  //  API Key
+
+            try {
+                final String BASE_URL = getString(R.string.tmdb_base_url) + mode;
+                final String PARAM_API_KEY = getString(R.string.tmdb_api_key);
+
+                Uri builtUri = Uri.parse(BASE_URL).buildUpon()
+                        .appendQueryParameter(PARAM_API_KEY, apiKey)
+                        .build();
+
+                String myURL = builtUri.toString();
+                URL url = new URL(myURL);
+
+                // Create the request to TheMovieDB.org, and open the connection
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+                urlConnection.connect();
+
+                // Read the input stream into a String
+                InputStream inputStream = urlConnection.getInputStream();
+                StringBuffer buffer = new StringBuffer();
+                if (inputStream == null) {
+                    // Nothing to do.
+                    return null;
+                }
+                reader = new BufferedReader(new InputStreamReader(inputStream));
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line + "\n");
+                }
+
+                if (buffer.length() == 0) {
+                    // Stream was empty.  No point in parsing.
+                    return null;
+                }
+                movieJsonStr = buffer.toString();
+            } catch (IOException e) {
+                Log.e(LOG_TAG, getString(R.string.error_pretext), e);
+                // If the code didn't successfully get the data, there's no point in parsing.
+                return null;
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (final IOException e) {
+                        Log.e(LOG_TAG, getString(R.string.error_ioexception), e);
+                    }
+                }
+            }
+
+            return movieJsonStr;
+        }
+
+        @Override
+        protected void onPostExecute(String movieJsonStr) {
+            try {
+                getListOfMoviesFromJson(movieJsonStr);
+            } catch (JSONException | ParseException e) {
+                Log.e(LOG_TAG, e.getMessage(), e);
+                e.printStackTrace();
+            }
+        }
+
+        private void getListOfMoviesFromJson(String movieJsonStr)
+                throws JSONException, ParseException {
+
+            final String TMDB_RESULTS = getString(R.string.tmdb_json_results);
+            final String TMDB_POSTER_PATH = getString(R.string.tmdb_json_poster_path);
+            final String TMDB_OVERVIEW = getString(R.string.tmdb_json_overview);
+            final String TMDB_RELEASE_DATE = getString(R.string.tmdb_json_release_date);
+            final String TMDB_TITLE = getString(R.string.tmdb_json_title);
+            final String TMDB_RATING = getString(R.string.tmdb_json_rating);
+
+            JSONObject moviePageJSON = new JSONObject(movieJsonStr);
+            JSONArray resultsJSONArray = moviePageJSON.getJSONArray(TMDB_RESULTS);
+
+            mMoviePosterAdapter.clear();
+            for (int i = 0; i < resultsJSONArray.length(); i++) {
+                JSONObject movieJSON = resultsJSONArray.getJSONObject(i);
+
+                String title = movieJSON.getString(TMDB_TITLE);
+                Double rating = movieJSON.getDouble(TMDB_RATING);
+                String overview = movieJSON.getString(TMDB_OVERVIEW);
+                String posterPath = movieJSON.getString(TMDB_POSTER_PATH);
+
+                // http://stackoverflow.com/questions/11046053/how-to-format-date-string-in-java
+                Date date = new SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(movieJSON.getString(TMDB_RELEASE_DATE));
+                String releaseDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(date);
+
+                mMoviePosterAdapter.add(new Movie(title, releaseDate, overview, rating, posterPath));
+            }
+        }
     }
 }

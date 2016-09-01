@@ -7,7 +7,7 @@
     <string name="action_settings">Settings</string>
     <string name="action_search_mode">Sort Movies By..</string>
     <string name="action_search_mode_popular">Most Popular</string>
-    <string name="action_search_mode_top_rated">Top Rated</string>
+    <string name="action_search_mode_top_rated">HighestRated</string>
 
     <!-- Label strings for DetailActivity layout -->
     <string name="label_movie_release_date">Release Date:</string>
@@ -27,11 +27,7 @@
     <string name="prefs_search_mode_default_value">@string/prefs_search_mode_value_popular</string>
 
     <!-- Key value strings for Intent.putExtra -->
-    <string name="intent_key_movie_title">TITLE</string>
-    <string name="intent_key_movie_release_date">RELEASE_DATE</string>
-    <string name="intent_key_movie_user_rating">USER_RATING</string>
-    <string name="intent_key_movie_plot_summary">PLOT_SUMMARY</string>
-    <string name="intent_key_movie_poster_url">POSTER_URL</string>
+    <string name="intent_key_movie_parcel">MOVIE_PARCEL</string>
 
     <!-- TheMovieDB API helper strings -->
     <string name="tmdb_image_base_url">http://image.tmdb.org/t/p/w185</string>

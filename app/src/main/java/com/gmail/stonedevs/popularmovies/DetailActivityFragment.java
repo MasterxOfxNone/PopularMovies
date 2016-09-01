@@ -1,6 +1,5 @@
 package com.gmail.stonedevs.popularmovies;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -11,15 +10,11 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import org.parceler.Parcels;
+
 import java.util.Locale;
 
 public class DetailActivityFragment extends Fragment {
-    private static final String TAG_TITLE = "TITLE";
-    private static final String TAG_RELEASE_DATE = "RELEASE_DATE";
-    private static final String TAG_USER_RATING = "USER_RATING";
-    private static final String TAG_PLOT_SUMMARY = "PLOT_SUMMARY";
-    private static final String TAG_POSTER_URL = "POSTER_URL";
-
     public DetailActivityFragment() {
     }
 
@@ -34,21 +29,14 @@ public class DetailActivityFragment extends Fragment {
         TextView textView_userRating = (TextView) view.findViewById(R.id.textView_movie_user_rating);
         TextView textView_plotSummary = (TextView) view.findViewById(R.id.textView_movie_plot_summary);
 
-        Intent intent = getActivity().getIntent();
+        Movie movie = Parcels.unwrap(getActivity().getIntent().getParcelableExtra(getString(R.string.intent_key_movie_parcel)));
 
-        assert intent != null;
-        String title = intent.getStringExtra(TAG_TITLE);
-        String releaseDate = intent.getStringExtra(TAG_RELEASE_DATE);
-        double userRating = intent.getDoubleExtra(TAG_USER_RATING, 0);
-        String plotSummary = intent.getStringExtra(TAG_PLOT_SUMMARY);
-        String posterUrl = intent.getStringExtra(TAG_POSTER_URL);
+        textView_title.setText(movie.title);
+        textView_releaseDate.setText(movie.releaseDate);
+        textView_userRating.setText(String.format(Locale.US, "%.1f", movie.userRating));
+        textView_plotSummary.setText(movie.overview);
 
-        textView_title.setText(title);
-        textView_releaseDate.setText(releaseDate);
-        textView_userRating.setText(String.format(Locale.US, "%.1f", userRating));
-        textView_plotSummary.setText(plotSummary);
-
-        Picasso.with(getContext()).load("http://image.tmdb.org/t/p/w185" + posterUrl).into(imageView);
+        Picasso.with(getContext()).load(getString(R.string.tmdb_image_base_url) + movie.posterUrl).into(imageView);
 
         return view;
     }
